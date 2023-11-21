@@ -1,11 +1,10 @@
 package com.example.app;
-import java.io.BufferedReader;
-import java.io.FileReader;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.temporal.ChronoUnit;
 
-import com.example.app.pojo.ClaudeResponse;
+import com.example.app.pojo.CohereResponse;
 import com.example.app.utils.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,17 +20,9 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 
 public class App {
     public static void main(String[] args) {
-        // read prompt from txt file
-        String filePath = "./my-app/example-payload.txt";
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            StringBuilder content = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                content.append(line).append("\n"); // Append each line to the content
-            }
-            String BEDROCK_JSON_BODY = content.toString();
-            BEDROCK_JSON_BODY = BEDROCK_JSON_BODY.substring(0, BEDROCK_JSON_BODY.length() - 1);
-            
+        try {
+            String BEDROCK_JSON_BODY = "{\"prompt\":\"Tell me a funny story\",\"max_tokens\":400,\"temperature\":0.75,\"p\":0.01,\"k\":0,\"stop_sequences\":[],\"return_likelihoods\":\"NONE\"}";
+
             // send prompt to bedrock
             String awsRegion = "us-east-1";
 
@@ -47,15 +38,15 @@ public class App {
                     .build();
             InvokeModelResponse invokeModel = bedrockClient
                 .invokeModel(InvokeModelRequest.builder()
-                .modelId("anthropic.claude-v2")
+                .modelId("cohere.command-text-v14")
                 .body(SdkBytes.fromString(BEDROCK_JSON_BODY, Charset.defaultCharset()))
                 .build());
 
 
              ObjectMapper mapper = new ObjectMapper();
-             ClaudeResponse claudeResponse = mapper.readValue(invokeModel.body().asUtf8String(), ClaudeResponse.class);
+             CohereResponse claudeResponse = mapper.readValue(invokeModel.body().asUtf8String(), CohereResponse.class);
 
-            System.out.println(claudeResponse.getCompletion());
+            System.out.println(claudeResponse.getGenerations()[0].getText());
         }
         catch (IOException e) {
             e.printStackTrace();
